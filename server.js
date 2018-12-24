@@ -2,7 +2,7 @@
 var express = require('express') //this is the equivalent of importng a package
 var mysql = require('mysql') //this is the equivalent of importng a package
 var bodyParser = require('body-parser');
-
+//Assad
 var connection = mysql.createConnection({
     host: 'localhost',
     port: '3306',
@@ -47,7 +47,7 @@ app.get('/', function (req, res) {
 
 })
 
-app.post('/register', function (request, response) {
+app.post('/signup', function (request, response) {
     var username = request.body.username
     var firstName = request.body.firstName
     var lastName = request.body.lastName
@@ -127,6 +127,29 @@ app.get('/movies', function (req, response) {
         response.send(result);
 
 
+
+    })
+
+    app.post('/register', function (request, response) {
+        var username = request.body.username
+        var firstName = request.body.firstName
+        var lastName = request.body.lastName
+        var pwd = request.body.pwd
+
+
+        var userPostingData = request.body;
+
+        connection.query('SELECT * FROM Users WHERE username = "' + username + '"', function (error, results) {
+
+            if (results.length == 1) {
+                response.send("User already exists")
+            } else {
+                connection.query('INSERT INTO `Users` SET ?', userPostingData, function (error, results, fields) {
+                    response.send('User inserted successfully')
+                });
+
+            }
+        });
 
     })
 })
