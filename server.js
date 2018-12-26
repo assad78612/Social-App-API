@@ -104,54 +104,58 @@ app.post('/login', function (req, res) {
     // WHERE username = "af410"
     // AND pwd = "London23"
 
+    var authenticationSuccessfulObj = 
+    {
+        "message": "Authentication successful",
+        "response": "OK"
+    }
+
+    var authenticationUnsuccessfulObj = 
+    {
+        "message": "Authentication unsuccessful",
+        "response": "BAD"
+    }
+
+
     var username = req.body.username
     var pwd = req.body.pwd
 
     connection.query('SELECT * FROM Users WHERE username = "' + username + '"' + ' AND pwd = ' + '"' + pwd + '"', function (error, results) {
 
         if (results.length == 1) {
-            res.send("Authentication successful")
+            res.status(200)
+            res.send(authenticationSuccessfulObj)
         } else {
-            res.send("Authentication unsuccessful")
+            res.status(401)
+            res.send(authenticationUnsuccessfulObj)
         }
     });
 
 
 })
 
-app.get('/movies', function (req, response) {
-    connection.query("SELECT * FROM Movies", function (err, result, fields) {
+app.post('/register', function (request, response) {
+    var username = request.body.username
+    var firstName = request.body.firstName
+    var lastName = request.body.lastName
+    var pwd = request.body.pwdnpm
 
 
+    var userPostingData = request.body;
 
-        response.send(result);
+    connection.query('SELECT * FROM Users WHERE username = "' + username + '"', function (error, results) {
 
+        if (results.length == 1) {
+            response.send("User already exists")
+        } else {
+            connection.query('INSERT INTO `Users` SET ?', userPostingData, function (error, results, fields) {
+                response.send('User inserted successfully')
+            });
 
+        }
+    });
 
-    })
-
-    app.post('/register', function (request, response) {
-        var username = request.body.username
-        var firstName = request.body.firstName
-        var lastName = request.body.lastName
-        var pwd = request.body.pwd
-
-
-        var userPostingData = request.body;
-
-        connection.query('SELECT * FROM Users WHERE username = "' + username + '"', function (error, results) {
-
-            if (results.length == 1) {
-                response.send("User already exists")
-            } else {
-                connection.query('INSERT INTO `Users` SET ?', userPostingData, function (error, results, fields) {
-                    response.send('User inserted successfully')
-                });
-
-            }
-        });
-
-    })
 })
+
 app.listen(3000)
 
