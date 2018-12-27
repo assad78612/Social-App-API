@@ -36,13 +36,38 @@ var app = express()
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json())
 
-app.get('/', function (req, res) {
+app.get('/users', function (req, res) {
+    var filteredUsers = [];
+    
+
+
+
     connection.query('SELECT * FROM `Users`', function (error, results, fields) {
         // error will be an Error if one occurred during the query
         // results will contain the results of the query
         // fields will contain information about the returned results fields (if any)
+
+
+        for (var i = 0; i < results.length; i++){
+            //lets make an empty object
+            var obj = {}
+
+            // and then make a key clled username
+            // and then get the current object in the loop, and get the username field from it
+            obj.username = results[i].username;
+            obj.firstName = results[i].firstName;
+            obj.lastName = results[i].lastName;
+
+            filteredUsers.push(obj)
+        }
+
+        // [{
+        //     username:
+        //      firtsName:
+        // }]
+
         console.log(results);
-        res.send(results);
+        res.send(filteredUsers);
     });
 
 })
@@ -104,13 +129,13 @@ app.post('/login', function (req, res) {
     // WHERE username = "af410"
     // AND pwd = "London23"
 
-    var authenticationSuccessfulObj = 
+    var authenticationSuccessfulObj =
     {
         "message": "Authentication successful",
         "response": "OK"
     }
 
-    var authenticationUnsuccessfulObj = 
+    var authenticationUnsuccessfulObj =
     {
         "message": "Authentication unsuccessful",
         "response": "BAD"
