@@ -38,7 +38,7 @@ app.use(bodyParser.json())
 
 app.get('/users', function (req, res) {
     var filteredUsers = [];
-    
+
 
 
 
@@ -48,7 +48,7 @@ app.get('/users', function (req, res) {
         // fields will contain information about the returned results fields (if any)
 
 
-        for (var i = 0; i < results.length; i++){
+        for (var i = 0; i < results.length; i++) {
             //lets make an empty object
             var obj = {}
 
@@ -178,8 +178,42 @@ app.post('/register', function (request, response) {
             });
 
         }
-    });
+    });  
+})
 
+app.get('/followers', function (req, res) {
+    var usernameQueried = req.query.username;
+    var followerUsernames = [];
+
+    var counter = 0
+
+    connection.query('SELECT * FROM socialapp.Followers WHERE follower =  "' + usernameQueried + '"', function (error, results, fields) {
+        
+        console.log(results)
+
+        for (var i = 0; i < results.length; i++){
+            counter += 1
+
+            var currentObj = results[i]
+
+            var follower = currentObj.following
+
+            connection.query('SELECT * FROM socialapp.Users WHERE username =  "' + follower + '"', function (error, userResult, fields) {
+            console.log(userResult);
+                followerUsernames.push(userResult)
+            })
+            
+            
+
+        }
+
+if (results.length == counter){
+            res.send(followerUsernames);
+            }
+        
+
+        
+    })
 })
 
 app.listen(3000)
