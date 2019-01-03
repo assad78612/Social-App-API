@@ -196,6 +196,7 @@ app.get('/following', function (req, res) {
 
     var usernameQueried = req.query.username;
 
+    //This is a string which represents our qurey 
     var queryToExec = 'SELECT u.username, u.firstName, u.lastName FROM socialapp.Users u INNER JOIN socialapp.Followers f ON u.username = f.follower WHERE following = "' + usernameQueried + '"'
 
     connection.query(queryToExec, function (error, results, fields) {
@@ -205,4 +206,4 @@ app.get('/following', function (req, res) {
 
 })
 
-app.listen(3000)
+app.listen(3000) 
