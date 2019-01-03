@@ -178,42 +178,31 @@ app.post('/register', function (request, response) {
             });
 
         }
-    });  
+    });
 })
 
 app.get('/followers', function (req, res) {
     var usernameQueried = req.query.username;
-    var followerUsernames = [];
 
-    var counter = 0
-
-    connection.query('SELECT * FROM socialapp.Followers WHERE follower =  "' + usernameQueried + '"', function (error, results, fields) {
-        
-        console.log(results)
-
-        for (var i = 0; i < results.length; i++){
-            counter += 1
-
-            var currentObj = results[i]
-
-            var follower = currentObj.following
-
-            connection.query('SELECT * FROM socialapp.Users WHERE username =  "' + follower + '"', function (error, userResult, fields) {
-            console.log(userResult);
-                followerUsernames.push(userResult)
-            })
-            
-            
-
-        }
-
-if (results.length == counter){
-            res.send(followerUsernames);
-            }
-        
-
-        
+    //This is a string which represents our qurey 
+    var queryToExec = 'SELECT u.username, u.firstName, u.lastName FROM socialapp.Users u INNER JOIN socialapp.Followers f ON u.username = f.following WHERE f.follower = "' + usernameQueried + '"'
+    //Once the string has been built using the provided MySQL qurey, which will be inptuted into the query which will get the results 
+    connection.query(queryToExec, function (error, results, fields) {
+        res.send(results);
     })
+})
+
+app.get('/following', function (req, res) {
+
+    var usernameQueried = req.query.username;
+
+    var queryToExec = 'SELECT u.username, u.firstName, u.lastName FROM socialapp.Users u INNER JOIN socialapp.Followers f ON u.username = f.follower WHERE following = "' + usernameQueried + '"'
+
+    connection.query(queryToExec, function (error, results, fields) {
+
+        res.send(results);
+    })
+
 })
 
 app.listen(3000)
