@@ -96,9 +96,7 @@ app.post('/signup', function (request, response) {
 })
 
 app.get('/posts', function (req, res) {
-
-    connection.query('SELECT * FROM Post', function (error, results, fields) {
-        // console.log.apply(results);
+    connection.query('SELECT * FROM Posts', function (error, results, fields) {
         res.send(results);
     })
 })
@@ -106,20 +104,8 @@ app.get('/posts', function (req, res) {
 app.get('/search', function (req, res) {
     var incomingSearch = req.query.title;
 
-    // console.log('SELECT * FROM Post WHERE PostTitle = "' + incomingSearch + '"');
-
     connection.query('SELECT * FROM Post WHERE PostTitle = "' + incomingSearch + '"', function (error, results, fields) {
-        // console.log.apply(results);
         res.send(results);
-    })
-})
-
-app.delete('/delete', function (req, res) {
-
-    connection.query('DELETE FROM Post WHERE PostTitle = ""', function (error, results) {
-        //console.log(results);
-
-        res.send('item deleted');
     })
 })
 
@@ -191,14 +177,9 @@ app.get('/followers', function (req, res) {
         res.send(results);
     })
 })
-<<<<<<< HEAD
-
-app.get('/following', function (req, res) {
-=======
 
 app.get('/following', function (req, res) {
 
->>>>>>> master
     var usernameQueried = req.query.username;
 
     var queryToExec = 'SELECT u.username, u.firstName, u.lastName FROM socialapp.Users u INNER JOIN socialapp.Followers f ON u.username = f.follower WHERE following = "' + usernameQueried + '"'
@@ -210,4 +191,5 @@ app.get('/following', function (req, res) {
 
 })
 
-app.listen(3000) 
+app.listen(3000)
+
