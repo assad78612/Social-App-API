@@ -72,29 +72,6 @@ app.get('/users', function (req, res) {
 
 })
 
-app.post('/signup', function (request, response) {
-    var username = request.body.username
-    var firstName = request.body.firstName
-    var lastName = request.body.lastName
-    var pwd = request.body.pwd
-
-
-    var userPostingData = request.body;
-
-    connection.query('SELECT * FROM Users WHERE username = "' + username + '"', function (error, results) {
-
-        if (results.length == 1) {
-            response.send("User already exists")
-        } else {
-            connection.query('INSERT INTO `Users` SET ?', userPostingData, function (error, results, fields) {
-                response.send('User inserted successfully')
-            });
-
-        }
-    });
-
-})
-
 app.get('/posts', function (req, res) {
     connection.query('SELECT * FROM Posts', function (error, results, fields) {
         res.send(results);
@@ -149,18 +126,38 @@ app.post('/register', function (request, response) {
     var username = request.body.username
     var firstName = request.body.firstName
     var lastName = request.body.lastName
-    var pwd = request.body.pwdnpm
+    var pwd = request.body.pwd
 
 
     var userPostingData = request.body;
 
-    connection.query('SELECT * FROM Users WHERE username = "' + username + '"', function (error, results) {
+
+    var registerSuccessfulObj =
+    {
+        "message": "Register successful",
+        "response": "OK"
+    }
+
+    var registerUnsuccessfulObj =
+    {
+        "message": "Register unsuccessful",
+        "response": "BAD"
+    }
+
+    connection.query('SELECT * FROM Users WHERE username = "' + username + '"', function (error, results, ) {
 
         if (results.length == 1) {
-            response.send("User already exists")
+            response.setHeader('Content-Type', 'application/json');
+            response.status(400)
+            response.send(registerUnsuccessfulObj)
+
         } else {
-            connection.query('INSERT INTO `Users` SET ?', userPostingData, function (error, results, fields) {
-                response.send('User inserted successfully')
+            connection.query('INSERT INTO `Users` SET ?', userPostingData, function (error, results, fields, rows) {
+                response.setHeader('Content-Type', 'application/json');
+                response.status(200)
+                response.send(registerSuccessfulObj)
+
+                console.log(error);
             });
 
         }
