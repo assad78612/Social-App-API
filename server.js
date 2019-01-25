@@ -1,4 +1,3 @@
-
 var express = require('express') //this is the equivalent of importng a package
 var mysql = require('mysql') //this is the equivalent of importng a package
 var bodyParser = require('body-parser');
@@ -33,14 +32,13 @@ connection.connect(function (err) {
 
 var app = express()
 //app.use allows us to add extensions to our server
-app.use(bodyParser.urlencoded({ extended: false }));
+app.use(bodyParser.urlencoded({
+    extended: false
+}));
 app.use(bodyParser.json())
 
 app.get('/users', function (req, res) {
     var filteredUsers = [];
-
-
-
 
     connection.query('SELECT * FROM `Users`', function (error, results, fields) {
         // error will be an Error if one occurred during the query
@@ -92,14 +90,12 @@ app.post('/login', function (req, res) {
     // WHERE username = "af410"
     // AND pwd = "London23"
 
-    var authenticationSuccessfulObj =
-    {
+    var authenticationSuccessfulObj = {
         "message": "Authentication successful",
         "response": "OK"
     }
 
-    var authenticationUnsuccessfulObj =
-    {
+    var authenticationUnsuccessfulObj = {
         "message": "Authentication unsuccessful",
         "response": "BAD"
     }
@@ -122,6 +118,21 @@ app.post('/login', function (req, res) {
 
 })
 
+app.post('/generateEmailToken', function (req, res) {
+
+    var randomString = Math.random().toString(36).substring(5);
+    var x = randomString.substr(0, 5)
+
+
+    var registerTokenObj = {
+        "Token": x
+
+    }
+
+    res.setHeader('Content-Type', 'application/json');
+    res.send(registerTokenObj)
+});
+
 app.post('/register', function (request, response) {
     var username = request.body.username
     var firstName = request.body.firstName
@@ -132,19 +143,22 @@ app.post('/register', function (request, response) {
     var userPostingData = request.body;
 
 
-    var registerSuccessfulObj =
-    {
+    var registerSuccessfulObj = {
         "message": "Register successful",
         "response": "OK"
     }
 
-    var registerUnsuccessfulObj =
-    {
+    var registerUnsuccessfulObj = {
         "message": "Register unsuccessful",
         "response": "BAD"
     }
 
-    connection.query('SELECT * FROM Users WHERE username = "' + username + '"', function (error, results, ) {
+
+    connection.query("DELETE FROM Users WHERE username = 'test'")
+
+    console.log("Deleted the user with id ---> 'test'")
+
+    connection.query('SELECT * FROM Users WHERE username = "' + username + '"', function (error, results) {
 
         if (results.length == 1) {
             response.setHeader('Content-Type', 'application/json');
@@ -157,7 +171,7 @@ app.post('/register', function (request, response) {
                 response.status(200)
                 response.send(registerSuccessfulObj)
 
-                console.log(error);
+                //console.log(error);
             });
 
         }
@@ -189,4 +203,3 @@ app.get('/following', function (req, res) {
 })
 
 app.listen(3000)
-
