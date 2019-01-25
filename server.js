@@ -1,6 +1,8 @@
 var express = require('express') //this is the equivalent of importng a package
 var mysql = require('mysql') //this is the equivalent of importng a package
 var bodyParser = require('body-parser');
+var nodemailer = require('nodemailer');
+
 //Assad
 var connection = mysql.createConnection({
     host: 'localhost',
@@ -119,19 +121,62 @@ app.post('/login', function (req, res) {
 })
 
 app.post('/generateEmailToken', function (req, res) {
+    var emailAddress = req.body.emailAddress
 
     var randomString = Math.random().toString(36).substring(5);
-    var x = randomString.substr(0, 5)
-
+    var generatedKey = randomString.substr(0, 5)
 
     var registerTokenObj = {
-        "Token": x
-
+        "generated_key": generatedKey
     }
 
-    res.setHeader('Content-Type', 'application/json');
-    res.send(registerTokenObj)
+    sendEmail(emailAddress, generatedKey)
+
+    var currentDate = new Date()
+
+    var dataToInsert = {
+        "emailAddress": emailAddress,
+        "token": generatedKey,
+        "expiryTime": currentDate
+    }
+
+    connection.query('INSERT INTO `Email_Token` SET ?', dataToInsert, function (error, results, fields, rows) {
+
+        res.setHeader('Content-Type', 'application/json');
+        res.send(registerTokenObj)
+    });
 });
+
+app.post('/checkEmailToken', function (req, res) {
+
+    var token = req.body.token;
+    var email = req.body.email;
+
+
+    var sql = "SELECT * FROM ?? WHERE ?? = ? AND ?? = ?";
+    var inserts = ['Email_Token', 'emailAddress', email, "token", token];
+    var newFormattedSQL = mysql.format(sql, inserts);
+
+    console.log(newFormattedSQL)
+
+    connection.query(newFormattedSQL, function (error, results) {
+
+        if (results.length >= 1) {
+
+            res.send("Valid token");
+
+        } else {
+
+            res.send("Invalid token")
+        }
+
+
+    });
+
+
+
+});
+
 
 app.post('/register', function (request, response) {
     var username = request.body.username
@@ -201,5 +246,37 @@ app.get('/following', function (req, res) {
     })
 
 })
+
+function sendEmail(sendTo, token) {
+
+    async function main() {
+
+        let transporter = nodemailer.createTransport({
+            host: "smtp.gmail.com",
+            port: 465,
+            secure: true, // true for 465, false for other ports
+            auth: {
+                user: "assadfarid8@gmail.com", // generated ethereal user
+                pass: "London12@" // generated ethereal password
+            }
+        });
+
+        let mailOptions = {
+            from: '"Assad Farid', // sender address
+            to: sendTo, // list of receivers
+            subject: "Welcome To MyApp", // Subject line
+            text: "Your generated token is " + token, // plain text body
+            html: "<b style='color: red'>" + "Your generated token is " + token + "</b>" // html body
+        };
+
+        let info = await transporter.sendMail(mailOptions)
+
+        console.log("Message sent: %s", info.messageId);
+        console.log("Preview URL: %s", nodemailer.getTestMessageUrl(info));
+    }
+
+    main().catch(console.error);
+}
+
 
 app.listen(3000)
