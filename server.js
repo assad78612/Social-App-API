@@ -72,7 +72,23 @@ app.get('/users', function (req, res) {
 
 })
 
-app.get('/posts', function (req, res) {
+// app.get('/example', function (req, res)
+// {
+//     var Posts = req.body.Posts;
+
+
+//     var sql = "SELECT * FROM ??";
+//     var inserts = ['Posts', 'emailAddress', email, "token", token];
+//     var newFormattedSQL = mysql.format(sql);
+
+//     console.log(newFormattedSQL)
+
+
+// })
+
+
+app.get('/posts', function (req, res) 
+{
     connection.query('SELECT * FROM Posts', function (error, results, fields) {
         res.send(results);
     })
@@ -183,6 +199,7 @@ app.post('/register', function (request, response) {
     var firstName = request.body.firstName
     var lastName = request.body.lastName
     var pwd = request.body.pwd
+    var emailAddress = request.body.emailAddress
 
 
     var userPostingData = request.body;
