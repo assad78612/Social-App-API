@@ -87,8 +87,7 @@ app.get('/users', function (req, res) {
 // })
 
 
-app.get('/posts', function (req, res) 
-{
+app.get('/posts', function (req, res) {
     connection.query('SELECT * FROM Posts', function (error, results, fields) {
         res.send(results);
     })
@@ -175,15 +174,23 @@ app.post('/checkEmailToken', function (req, res) {
 
     console.log(newFormattedSQL)
 
+    var verificationSuccess = {
+        "status": "successful"
+    }
+
+    var verificationError = {
+        "status": "bad"
+    }
+
     connection.query(newFormattedSQL, function (error, results) {
 
         if (results.length >= 1) {
-
-            res.send("Valid token");
+            res.status(200)
+            res.send(verificationSuccess);
 
         } else {
-
-            res.send("Invalid token")
+            res.status(400)
+            res.send(verificationError)
         }
 
 
