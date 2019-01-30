@@ -195,9 +195,6 @@ app.post('/checkEmailToken', function (req, res) {
 
 
     });
-
-
-
 });
 
 
@@ -217,9 +214,16 @@ app.post('/register', function (request, response) {
         "response": "OK"
     }
 
-    var registerUnsuccessfulObj = {
+    var registerUnsuccessfulUsernameExistsObj = {
         "message": "Register unsuccessful",
-        "response": "BAD"
+        "response": "BAD",
+        "reason": "Username exists"
+    }
+
+    var registerUnsuccessfulEmailExistsObj = {
+        "message": "Register unsuccessful",
+        "response": "BAD",
+        "reason": "Email exists"
     }
 
 
@@ -227,24 +231,40 @@ app.post('/register', function (request, response) {
 
     console.log("Deleted the user with id ---> 'test'")
 
-    connection.query('SELECT * FROM Users WHERE username = "' + username + '"', function (error, results) {
+    connection.query('SELECT * FROM Users WHERE emailAddress = "' + emailAddress + '"', function (error, results) {
 
         if (results.length == 1) {
-            response.setHeader('Content-Type', 'application/json');
             response.status(400)
-            response.send(registerUnsuccessfulObj)
+            response.send(registerUnsuccessfulEmailExistsObj)
 
-        } else {
-            connection.query('INSERT INTO `Users` SET ?', userPostingData, function (error, results, fields, rows) {
-                response.setHeader('Content-Type', 'application/json');
-                response.status(200)
-                response.send(registerSuccessfulObj)
+        } else { //If the email address doesn't exist, then this else statement will perform another qurey for a dupilate username. 
 
-                //console.log(error);
+            connection.query('SELECT * FROM Users WHERE username = "' + username + '"', function (error, results) {
+                
+                //If the username doesn't exist, then this else statement will perform a qurey to insert the data.
+
+                if (results.length == 1) {
+                    response.setHeader('Content-Type', 'application/json');
+                    response.status(400)
+                    response.send(registerUnsuccessfulUsernameExistsObj)
+
+                } else {
+                    connection.query('INSERT INTO `Users` SET ?', userPostingData, function (error, results, fields, rows) {
+                        response.setHeader('Content-Type', 'application/json');
+                        response.status(200)
+                        response.send(registerSuccessfulObj)
+
+                        //console.log(error);
+                    });
+                }
             });
-
         }
+
+
     });
+
+
+
 })
 
 app.get('/followers', function (req, res) {
