@@ -57,6 +57,7 @@ app.get('/users', function (req, res) {
             obj.username = results[i].username;
             obj.firstName = results[i].firstName;
             obj.lastName = results[i].lastName;
+            obj.phoneNumber = results[i].phoneNumber;
 
             filteredUsers.push(obj)
         }
@@ -131,8 +132,6 @@ app.post('/login', function (req, res) {
             res.send(authenticationUnsuccessfulObj)
         }
     });
-
-
 })
 
 app.post('/generateEmailToken', function (req, res) {
@@ -200,9 +199,6 @@ app.post('/checkEmailToken', function (req, res) {
 
 app.post('/register', function (request, response) {
     var username = request.body.username
-    var firstName = request.body.firstName
-    var lastName = request.body.lastName
-    var pwd = request.body.pwd
     var emailAddress = request.body.emailAddress
 
 
@@ -240,7 +236,7 @@ app.post('/register', function (request, response) {
         } else { //If the email address doesn't exist, then this else statement will perform another qurey for a dupilate username. 
 
             connection.query('SELECT * FROM Users WHERE username = "' + username + '"', function (error, results) {
-                
+
                 //If the username doesn't exist, then this else statement will perform a qurey to insert the data.
 
                 if (results.length == 1) {
@@ -260,12 +256,56 @@ app.post('/register', function (request, response) {
             });
         }
 
-
     });
 
-
-
 })
+
+
+/*
+    Endpoint   : /follow
+    Purpose    : This endpoint allows a user to follow another user
+*/
+app.post('/follow', function (request, response) {
+    var following = request.body.following
+    var follower = request.body.follower
+
+    var followData = request.body;
+
+    var followSuccess = {
+        "message": "Follow successful",
+        "response": "OK"
+    }
+
+    var followUnsuccessful = {
+        "message": "Follow unsuccessful",
+        "response": "OK",
+        "reason": "You are already following that user"
+    }
+
+    //Skeleton
+    var sql = "SELECT * FROM ?? WHERE ?? = ? AND ?? = ?";
+
+    //Data to go into question marks
+    var inserts = ['Followers', 'follower', follower, 'following', following];
+    var generatedQuery = mysql.format(sql, inserts);
+
+    connection.query(generatedQuery, function (error, results) {
+
+        if (results.length == 1) {
+            response.status(400)
+            response.send(followUnsuccessful)
+
+        } else { //If the email address doesn't exist, then this else statement will perform another qurey for a dupilate username. 
+
+            connection.query('INSERT INTO `Followers` SET ?', followData, function (error, results, fields, rows) {
+                response.setHeader('Content-Type', 'application/json');
+                response.status(200)
+                response.send(followSuccess)
+            });
+        }
+    });
+})
+
 
 app.get('/followers', function (req, res) {
     var usernameQueried = req.query.username;
@@ -290,6 +330,104 @@ app.get('/following', function (req, res) {
     })
 
 })
+
+app.get('/phoneNumber', function (req, res) {
+    var phoneNumberQueried = req.query.phoneNumber;
+
+    //This is a string which represents our qurey 
+    var queryToExec = 'SELECT u.phoneNumber, u.username, u.firstName, u.lastName FROM socialapp.Users u = "' + phoneNumberQueried + '"'
+    //Once the string has been built using the provided MySQL qurey, which will be inptuted into the query which will get the results 
+    connection.query(queryToExec, function (error, results, fields) {
+        res.send(results);
+    })
+})
+
+// app.get('/getPhoneNumber'), function(req,res) { 
+
+//     var getPhoneNumber = req.query.getPhoneNumber;
+
+//     var sql = "SELECT Users FROM ?? WHERE ?? = ?";
+//     var inserts = ['Users', 'phoneNumber', phoneNumber];
+//     var newFormattedSQL = mysql.format(sql, inserts);
+
+//     console.log(FormattedSQL)
+
+//     connection.query(FormattedSQL, function (error, results) {
+
+//         if (results.length >= 1) {
+//             res.status(200)
+//             res.send(results[0]);
+
+//         } else {
+//             res.status(400)
+//             res.send("Email addresss doesnt exist")
+//         }
+//     });
+// }
+
+app.get('/emails', function (req, res) {
+
+    var emailQueried = req.query.email;
+
+    var queryToExec = 'SELECT u.username, u.firstName, u.lastName FROM socialapp.Users u INNER JOIN socialapp.Followers f ON u.username = f.follower WHERE following = "' + usernameQueried + '"'
+
+    connection.query(queryToExec, function (error, results, fields) {
+
+        res.send(results);
+    })
+
+})
+
+app.get('/checkEmail', function (req, res) {
+
+    var username = req.query.username;
+
+
+    var sql = "SELECT emailAddress FROM ?? WHERE ?? = ?";
+    var inserts = ['Users', 'username', username];
+    var newFormattedSQL = mysql.format(sql, inserts);
+
+    console.log(newFormattedSQL)
+
+    connection.query(newFormattedSQL, function (error, results) {
+
+        if (results.length >= 1) {
+            res.status(200)
+            res.send(results[0]);
+
+        } else {
+            res.status(400)
+            res.send("Email addresss doesnt exist")
+        }
+    });
+});
+
+// app.get('/checkPhoneNumber', function (req, res) {
+
+//     var phoneNumber = req.query.phoneNumber;
+
+
+//     var sql = "SELECT phoneNumber FROM ?? WHERE ?? = ?";
+//     var inserts = ['Users', 'phoneNumber', phoneNumber];
+//     var newFormattedSQL = mysql.format(sql, inserts);
+
+//     console.log(newFormattedSQL)
+
+//     connection.query(newFormattedSQL, function (error, results) {
+
+//         if (results.length == 1) {
+//             res.status(200)
+//             res.send(results[0]);
+//             res.send("Phone number found")
+
+
+//         } else {
+//             res.status(400)
+//             res.send("Phone number doesn't exist")
+//         }
+//     });
+// });
+
 
 function sendEmail(sendTo, token) {
 
@@ -321,6 +459,4 @@ function sendEmail(sendTo, token) {
 
     main().catch(console.error);
 }
-
-
 app.listen(3000)
