@@ -73,19 +73,57 @@ app.get('/users', function (req, res) {
 
 })
 
-// app.get('/example', function (req, res)
-// {
-//     var Posts = req.body.Posts;
+app.get('/userprofile', function (req, res) {
+    var username = req.query.id;
+
+    var sql = "SELECT * FROM ?? WHERE ?? = ?";
+    var inserts = ['Users', 'username', username];
+    var userProfileQuery = mysql.format(sql, inserts);
 
 
-//     var sql = "SELECT * FROM ??";
-//     var inserts = ['Posts', 'emailAddress', email, "token", token];
-//     var newFormattedSQL = mysql.format(sql);
+    // Following Query - Who I FOLLOW
+    var followingQuery = 'SELECT u.username, u.firstName, u.lastName FROM socialapp.Users u INNER JOIN socialapp.Followers f ON u.username = f.following WHERE f.follower = "' + username + '"'
 
-//     console.log(newFormattedSQL)
+    // Followers Query - Who FOLLOWS ME
+    var followersQuery = 'SELECT u.username, u.firstName, u.lastName, u.phoneNumber FROM socialapp.Users u INNER JOIN socialapp.Followers f ON u.username = f.follower WHERE f.following = "' + username + '"'
 
 
-// })
+    // Check if user exists
+    connection.query('SELECT * FROM Users WHERE username = "' + username + '"', function (error, results) {
+
+        //If the username doesn't exist, then this else statement will just show "Username doesnt exist".
+
+        if (results.length >= 1) {
+
+            // 1 - User Profile Query
+            connection.query(userProfileQuery, function (error, userProfileResults, fields) {
+                // 2 - Following Query
+                connection.query(followingQuery, function (error, followingResults, fields) {
+                    // 3 - Followers Query
+                    connection.query(followersQuery, function (error, followerResults, fields) {
+                        var combinedData = {
+                            "userProfile": userProfileResults[0],
+                            "followers": followerResults,
+                            "following": followingResults
+                        }
+
+                        res.send(combinedData);
+                    })
+                })
+            })
+
+        } else {
+
+            res.setHeader('Content-Type', 'application/json');
+            res.status(400)
+
+            var erroObj = {
+                "error": "Username doesn't exist"
+            }
+            res.send(erroObj)
+        }
+    })
+})
 
 
 app.get('/posts', function (req, res) {
@@ -266,8 +304,8 @@ app.post('/register', function (request, response) {
     Purpose    : This endpoint allows a user to follow another user
 */
 app.post('/follow', function (request, response) {
-    var following = request.body.following
     var follower = request.body.follower
+    var following = request.body.following
 
     var followData = request.body;
 
@@ -278,36 +316,64 @@ app.post('/follow', function (request, response) {
 
     var followUnsuccessful = {
         "message": "Follow unsuccessful",
-        "response": "OK",
+        "response": "BAD",
         "reason": "You are already following that user"
     }
 
+    var userDoesNotExist = {
+        "message": "Follow unsuccessful",
+        "response": "BAD",
+        "reason": "User does not exist"
+    }
+
     //Skeleton
-    var sql = "SELECT * FROM ?? WHERE ?? = ? AND ?? = ?";
+    var userQuery = "SELECT * FROM ?? WHERE ?? = ?";
 
     //Data to go into question marks
-    var inserts = ['Followers', 'follower', follower, 'following', following];
-    var generatedQuery = mysql.format(sql, inserts);
+    var userInserts = ['Users', 'username', following];
+    var userGeneratedQuery = mysql.format(userQuery, userInserts);
 
-    connection.query(generatedQuery, function (error, results) {
+    connection.query(userGeneratedQuery, function (error, results) {
 
-        if (results.length == 1) {
-            response.status(400)
-            response.send(followUnsuccessful)
+        if (results.length >= 1) {
 
-        } else { //If the email address doesn't exist, then this else statement will perform another qurey for a dupilate username. 
+            // Check to see if they're already following
+            var followQuery = "SELECT * FROM ?? WHERE ?? = ? AND ?? = ?";
 
-            connection.query('INSERT INTO `Followers` SET ?', followData, function (error, results, fields, rows) {
-                response.setHeader('Content-Type', 'application/json');
-                response.status(200)
-                response.send(followSuccess)
+            //Data to go into question marks
+            var followInserts = ['Followers', 'follower', follower, 'following', following];
+            var followGeneratedQuery = mysql.format(followQuery, followInserts);
+
+
+            connection.query(followGeneratedQuery, function (error, results) {
+
+                if (results.length == 1) {
+                    response.status(400)
+                    response.send(followUnsuccessful)
+
+                } else {
+
+                    connection.query('INSERT INTO `Followers` SET ?', followData, function (error, results, fields, rows) {
+                        response.setHeader('Content-Type', 'application/json');
+                        response.status(200)
+                        response.send(followSuccess)
+                    });
+                }
             });
+
+
+        } else {
+            response.setHeader('Content-Type', 'application/json');
+            response.send(userDoesNotExist)
         }
     });
+
+
+
 })
 
 
-app.get('/followers', function (req, res) {
+app.get('/following', function (req, res) {
     var usernameQueried = req.query.username;
 
     //This is a string which represents our qurey 
@@ -318,7 +384,7 @@ app.get('/followers', function (req, res) {
     })
 })
 
-app.get('/following', function (req, res) {
+app.get('/followers', function (req, res) {
 
     var usernameQueried = req.query.username;
 
@@ -331,16 +397,16 @@ app.get('/following', function (req, res) {
 
 })
 
-app.get('/phoneNumber', function (req, res) {
-    var phoneNumberQueried = req.query.phoneNumber;
+// app.get('/phoneNumber', function (req, res) {
+//     var phoneNumberQueried = req.query.phoneNumber;
 
-    //This is a string which represents our qurey 
-    var queryToExec = 'SELECT u.phoneNumber, u.username, u.firstName, u.lastName FROM socialapp.Users u = "' + phoneNumberQueried + '"'
-    //Once the string has been built using the provided MySQL qurey, which will be inptuted into the query which will get the results 
-    connection.query(queryToExec, function (error, results, fields) {
-        res.send(results);
-    })
-})
+//     //This is a string which represents our qurey 
+//     var queryToExec = 'SELECT u.phoneNumber, u.username, u.firstName, u.lastName FROM socialapp.Users u = "' + phoneNumberQueried + '"'
+//     //Once the string has been built using the provided MySQL qurey, which will be inptuted into the query which will get the results 
+//     connection.query(queryToExec, function (error, results, fields) {
+//         res.send(results);
+//     })
+// })
 
 // app.get('/getPhoneNumber'), function(req,res) { 
 
@@ -401,33 +467,6 @@ app.get('/checkEmail', function (req, res) {
         }
     });
 });
-
-// app.get('/checkPhoneNumber', function (req, res) {
-
-//     var phoneNumber = req.query.phoneNumber;
-
-
-//     var sql = "SELECT phoneNumber FROM ?? WHERE ?? = ?";
-//     var inserts = ['Users', 'phoneNumber', phoneNumber];
-//     var newFormattedSQL = mysql.format(sql, inserts);
-
-//     console.log(newFormattedSQL)
-
-//     connection.query(newFormattedSQL, function (error, results) {
-
-//         if (results.length == 1) {
-//             res.status(200)
-//             res.send(results[0]);
-//             res.send("Phone number found")
-
-
-//         } else {
-//             res.status(400)
-//             res.send("Phone number doesn't exist")
-//         }
-//     });
-// });
-
 
 function sendEmail(sendTo, token) {
 
