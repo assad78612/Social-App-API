@@ -140,6 +140,57 @@ app.get('/search', function (req, res) {
     })
 })
 
+app.post('/createPost', function (req, res) {
+
+    var currentDate = new Date()
+
+
+    var dataToInsert = {
+        "postID": 0,
+        "postText": req.body.postText,
+        "postAuthor": req.body.postAuthor,
+        "postTime": currentDate
+    }
+
+    var userDoesNotExist = {
+        "message": "Post could not be created",
+        "response": "BAD",
+        "reason": "User does not exist"
+    }
+
+    var postSuccesful = {
+        "message": "Post created",
+        "response": "OK",
+        "reason": "Post has been created"
+    }
+
+
+    //Skeleton
+    var userQuery = "SELECT * FROM ?? WHERE ?? = ?";
+
+    //Data to go into question marks
+    var userInserts = ['Users', 'username', req.body.postAuthor];
+    var userGeneratedQuery = mysql.format(userQuery, userInserts);
+
+    connection.query(userGeneratedQuery, function (error, results) {
+
+        if (results.length == 1) {
+
+            connection.query('INSERT INTO `Posts` SET ?', dataToInsert, function (error, results, fields, rows) {
+
+                res.setHeader('Content-Type', 'application/json');
+                res.status(200)
+                res.send(postSuccesful)
+            });
+
+        } else {
+            res.setHeader('Content-Type', 'application/json');
+            res.status(400)
+            res.send(userDoesNotExist)
+        }
+    });
+})
+
 app.post('/login', function (req, res) {
 
     // SELECT * FROM socialapp.Users
@@ -397,39 +448,6 @@ app.get('/followers', function (req, res) {
 
 })
 
-// app.get('/phoneNumber', function (req, res) {
-//     var phoneNumberQueried = req.query.phoneNumber;
-
-//     //This is a string which represents our qurey 
-//     var queryToExec = 'SELECT u.phoneNumber, u.username, u.firstName, u.lastName FROM socialapp.Users u = "' + phoneNumberQueried + '"'
-//     //Once the string has been built using the provided MySQL qurey, which will be inptuted into the query which will get the results 
-//     connection.query(queryToExec, function (error, results, fields) {
-//         res.send(results);
-//     })
-// })
-
-// app.get('/getPhoneNumber'), function(req,res) { 
-
-//     var getPhoneNumber = req.query.getPhoneNumber;
-
-//     var sql = "SELECT Users FROM ?? WHERE ?? = ?";
-//     var inserts = ['Users', 'phoneNumber', phoneNumber];
-//     var newFormattedSQL = mysql.format(sql, inserts);
-
-//     console.log(FormattedSQL)
-
-//     connection.query(FormattedSQL, function (error, results) {
-
-//         if (results.length >= 1) {
-//             res.status(200)
-//             res.send(results[0]);
-
-//         } else {
-//             res.status(400)
-//             res.send("Email addresss doesnt exist")
-//         }
-//     });
-// }
 
 app.get('/emails', function (req, res) {
 
