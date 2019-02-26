@@ -12,17 +12,19 @@ var connection = mysql.createConnection({
     database: 'socialapp'
 });
 
-//Difference betwen Java and JS Functions
-// [ JAVASCRIPT ]
-// function myFunction(){
-//     return "hi"
-// }
 
-// [ JAVA ]
-// private String myFunction(){
-//     return "hi"
-// }
 
+
+/* Difference betwen Java and JS Functions
+[ JAVASCRIPT ]
+function myFunction(){
+    return "hi"
+}
+
+[ JAVA ]
+private String myFunction(){
+    return "hi"
+} */
 
 connection.connect(function (err) {
     if (err) {
@@ -43,35 +45,53 @@ app.get('/users', function (req, res) {
     var filteredUsers = [];
 
     connection.query('SELECT * FROM `Users`', function (error, results, fields) {
-        // error will be an Error if one occurred during the query
-        // results will contain the results of the query
-        // fields will contain information about the returned results fields (if any)
+        /* error will be an Error if one occurred during the query
+        results will contain the results of the query
+        fields will contain information about the returned results fields (if any) */
 
 
         for (var i = 0; i < results.length; i++) {
             //lets make an empty object
             var obj = {}
 
-            // and then make a key clled username
-            // and then get the current object in the loop, and get the username field from it
+            /* and then make a key clled username
+            and then get the current object in the loop, and get the username field from it */
             obj.username = results[i].username;
             obj.firstName = results[i].firstName;
             obj.lastName = results[i].lastName;
             obj.phoneNumber = results[i].phoneNumber;
+            // obj.profilePicture = results[i].profilePicture;
 
             filteredUsers.push(obj)
         }
 
-        // [{
-        //     username:
-        //      firtsName:
-        // }]
+        /* [{
+            username:
+             firtsName:
+        }] */
 
         console.log(results);
         res.send(filteredUsers);
     });
 
 })
+
+//app.post('/uploadProfileImage') {
+
+//req.body.username
+//req.body.base64image
+
+
+//do a queyr to check thar the user youre trying to update exists
+
+// if they do exist 
+
+//convert the image they uploaded to base64 (android side, so at this point uou should get /9/dsdhakjh379837dhakhdkjahk)
+
+/*  UPDATE socialapp.Users
+ SET profilePicture = 'BASE 64 STRING GOES HERE'
+ WHERE username = 'req.body.username' */
+//}
 
 app.get('/userprofile', function (req, res) {
     var username = req.query.id;
@@ -87,7 +107,6 @@ app.get('/userprofile', function (req, res) {
     // Followers Query - Who FOLLOWS ME
     var followersQuery = 'SELECT u.username, u.firstName, u.lastName, u.phoneNumber FROM socialapp.Users u INNER JOIN socialapp.Followers f ON u.username = f.follower WHERE f.following = "' + username + '"'
 
-
     // Check if user exists
     connection.query('SELECT * FROM Users WHERE username = "' + username + '"', function (error, results) {
 
@@ -97,12 +116,24 @@ app.get('/userprofile', function (req, res) {
 
             // 1 - User Profile Query
             connection.query(userProfileQuery, function (error, userProfileResults, fields) {
+
+                //console.log(userProfileResults[0].profilePicture)
+                //console.log(new Buffer(userProfileResults[0].profilePicture).toString('utf8'))
+
                 // 2 - Following Query
                 connection.query(followingQuery, function (error, followingResults, fields) {
                     // 3 - Followers Query
                     connection.query(followersQuery, function (error, followerResults, fields) {
                         var combinedData = {
-                            "userProfile": userProfileResults[0],
+                            "userProfile": {
+                                "username": userProfileResults[0].username,
+                                "firstName": userProfileResults[0].firstName,
+                                "lastName": userProfileResults[0].lastName,
+                                "pwd": userProfileResults[0].pwd,
+                                "emailAddress": userProfileResults[0].emailAddress,
+                                "phoneNumber": userProfileResults[0].phoneNumber,
+                                "profileImage": new Buffer(userProfileResults[0].profilePicture).toString('utf8')
+                            },
                             "followers": followerResults,
                             "following": followingResults
                         }
@@ -147,7 +178,8 @@ app.post('/createPost', function (req, res) {
 
     var dataToInsert = {
         "postID": 0,
-        "postText": req.body.postText,
+        "postTitle": req.body.postTitle,
+        "postDescription": req.body.postDescription,
         "postAuthor": req.body.postAuthor,
         "postTime": currentDate
     }
@@ -174,7 +206,7 @@ app.post('/createPost', function (req, res) {
 
     connection.query(userGeneratedQuery, function (error, results) {
 
-        if (results.length == 1) {
+        if (results.length >= 1) {
 
             connection.query('INSERT INTO `Posts` SET ?', dataToInsert, function (error, results, fields, rows) {
 
@@ -193,9 +225,9 @@ app.post('/createPost', function (req, res) {
 
 app.post('/login', function (req, res) {
 
-    // SELECT * FROM socialapp.Users
-    // WHERE username = "af410"
-    // AND pwd = "London23"
+    /* SELECT * FROM socialapp.Users
+    WHERE username = "af410"
+    AND pwd = "London23" */
 
     var authenticationSuccessfulObj = {
         "message": "Authentication successful",
@@ -461,6 +493,7 @@ app.get('/emails', function (req, res) {
     })
 
 })
+
 
 app.get('/checkEmail', function (req, res) {
 
