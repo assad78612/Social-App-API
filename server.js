@@ -163,6 +163,13 @@ app.get('/posts', function (req, res) {
     })
 })
 
+app.get('/events', function (req, res) {
+    connection.query('SELECT * FROM Events', function (error, results, fields) {
+        res.send(results);
+    })
+})
+
+
 app.get('/search', function (req, res) {
     var incomingSearch = req.query.title;
 
@@ -219,6 +226,64 @@ app.post('/createPost', function (req, res) {
             res.setHeader('Content-Type', 'application/json');
             res.status(400)
             res.send(userDoesNotExist)
+        }
+    });
+})
+
+app.post('/createEvents', function (req, res) {
+
+    var currentDate = new Date()
+    //eventID, eventTitle, eventDescription, eventAuthor, eventTime
+
+    var dataToInsert = {
+        "eventID": 0,
+        "eventTitle": req.body.eventTitle,
+        "eventDescription": req.body.eventDescription,
+        "eventAuthor": req.body.eventAuthor,
+        "eventTime": currentDate
+    }
+
+    var userDoesNotExist = {
+        "message": "Event could not be created",
+        "response": "BAD",
+        "reason": "User does not exist"
+    }
+
+    var eventSuccessful = {
+        "message": "Event created",
+        "response": "OK",
+        "reason": "Post has been created"
+    }
+
+
+    //Skeleton
+    var userQuery = "SELECT * FROM ?? WHERE ?? = ?";
+
+    //Data to go into question marks
+    var userInserts = ['Users', 'username', req.body.eventAuthor];
+    var userGeneratedQuery = mysql.format(userQuery, userInserts);
+
+    connection.query(userGeneratedQuery, function (error, results) {
+
+        console.log("HIT THIS POINT")
+
+        if (results.length >= 1) {
+
+            connection.query('INSERT INTO `Events` SET ?', dataToInsert, function (error, results, fields, rows) {
+
+                console.log(error)
+                console.log(results)
+
+                res.setHeader('Content-Type', 'application/json');
+                res.status(200)
+                res.send(eventSuccessful)
+            });
+
+        } else {
+            res.setHeader('Content-Type', 'application/json');
+            res.status(400)
+            res.send(userDoesNotExist)
+            console.log(error)
         }
     });
 })
