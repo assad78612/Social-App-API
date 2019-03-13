@@ -5,11 +5,11 @@ var nodemailer = require('nodemailer');
 
 //Assad
 var connection = mysql.createConnection({
-    host: 'localhost',
+    host: '127.0.0.1',
     port: '3306',
     user: 'root',
     password: 'London12@',
-    database: 'socialapp'
+    database: 'kent_social'
 });
 
 
@@ -59,7 +59,7 @@ app.get('/users', function (req, res) {
             obj.username = results[i].username;
             obj.firstName = results[i].firstName;
             obj.lastName = results[i].lastName;
-            obj.phoneNumber = results[i].phoneNumber;
+           // obj.phoneNumber = results[i].phoneNumber;
             // obj.profilePicture = results[i].profilePicture;
 
             filteredUsers.push(obj)
@@ -102,10 +102,10 @@ app.get('/userprofile', function (req, res) {
 
 
     // Following Query - Who I FOLLOW
-    var followingQuery = 'SELECT u.username, u.firstName, u.lastName FROM socialapp.Users u INNER JOIN socialapp.Followers f ON u.username = f.following WHERE f.follower = "' + username + '"'
+    var followingQuery = 'SELECT u.username, u.firstName, u.lastName FROM kent_social.Users u INNER JOIN kent_social.Followers f ON u.username = f.following WHERE f.follower = "' + username + '"'
 
     // Followers Query - Who FOLLOWS ME
-    var followersQuery = 'SELECT u.username, u.firstName, u.lastName, u.phoneNumber FROM socialapp.Users u INNER JOIN socialapp.Followers f ON u.username = f.follower WHERE f.following = "' + username + '"'
+    var followersQuery = 'SELECT u.username, u.firstName, u.lastName, FROM kent_social.Users u INNER JOIN kent_social.Followers f ON u.username = f.follower WHERE f.following = "' + username + '"'
 
     // Check if user exists
     connection.query('SELECT * FROM Users WHERE username = "' + username + '"', function (error, results) {
@@ -131,8 +131,8 @@ app.get('/userprofile', function (req, res) {
                                 "lastName": userProfileResults[0].lastName,
                                 "pwd": userProfileResults[0].pwd,
                                 "emailAddress": userProfileResults[0].emailAddress,
-                                "phoneNumber": userProfileResults[0].phoneNumber,
-                                "profileImage": new Buffer(userProfileResults[0].profilePicture).toString('utf8')
+                               // "phoneNumber": userProfileResults[0].phoneNumber,
+                                //"profileImage": new Buffer(userProfileResults[0].profilePicture).toString('utf8')
                             },
                             "followers": followerResults,
                             "following": followingResults
@@ -319,6 +319,39 @@ app.post('/login', function (req, res) {
         }
     });
 })
+
+
+app.post('/likeevent', function (req, res) {
+    var eventID = req.body.eventID
+    var username = req.body.username
+
+    var checkEventSQL = "SELECT * FROM ?? WHERE ?? = ? AND ?? = ?";
+    var inserts = ['Event_Likes', 'eventID', eventID, "username", username];
+    var checkIfEventExistsSQL = mysql.format(checkEventSQL, inserts);
+
+    var deleteEventSQl = "DELETE FROM ?? WHERE ?? = ? AND ?? = ?";
+    var inserts = ['Event_Likes', 'eventID', eventID, "username", username];
+    var deleteExistingLikeSQL = mysql.format(deleteEventSQl, inserts);
+    
+    connection.query(checkIfEventExistsSQL, function (error, results) {
+
+        if (results.length > 0) {
+            connection.query(deleteExistingLikeSQL, function (error, results) {
+                res.setHeader('Content-Type', 'application/json');
+                res.status(200)
+                res.send("Unliked")
+            })
+            
+        } else {
+            connection.query('INSERT INTO `Event_Likes` SET ?', req.body, function (error, results, fields, rows) {
+                res.setHeader('Content-Type', 'application/json');
+                res.status(200)
+                res.send("Liked")
+            });
+        }
+    });
+
+});
 
 app.post('/generateEmailToken', function (req, res) {
     var emailAddress = req.body.emailAddress
@@ -525,7 +558,7 @@ app.get('/following', function (req, res) {
     var usernameQueried = req.query.username;
 
     //This is a string which represents our qurey 
-    var queryToExec = 'SELECT u.username, u.firstName, u.lastName FROM socialapp.Users u INNER JOIN socialapp.Followers f ON u.username = f.following WHERE f.follower = "' + usernameQueried + '"'
+    var queryToExec = 'SELECT u.username, u.firstName, u.lastName FROM kent_social.Users u INNER JOIN kent_social.Followers f ON u.username = f.following WHERE f.follower = "' + usernameQueried + '"'
     //Once the string has been built using the provided MySQL qurey, which will be inptuted into the query which will get the results 
     connection.query(queryToExec, function (error, results, fields) {
         res.send(results);
@@ -536,7 +569,7 @@ app.get('/followers', function (req, res) {
 
     var usernameQueried = req.query.username;
 
-    var queryToExec = 'SELECT u.username, u.firstName, u.lastName FROM socialapp.Users u INNER JOIN socialapp.Followers f ON u.username = f.follower WHERE following = "' + usernameQueried + '"'
+    var queryToExec = 'SELECT u.username, u.firstName, u.lastName FROM kent_social.Users u INNER JOIN kent_social.Followers f ON u.username = f.follower WHERE following = "' + usernameQueried + '"'
 
     connection.query(queryToExec, function (error, results, fields) {
 
@@ -550,7 +583,7 @@ app.get('/emails', function (req, res) {
 
     var emailQueried = req.query.email;
 
-    var queryToExec = 'SELECT u.username, u.firstName, u.lastName FROM socialapp.Users u INNER JOIN socialapp.Followers f ON u.username = f.follower WHERE following = "' + usernameQueried + '"'
+    var queryToExec = 'SELECT u.username, u.firstName, u.lastName FROM kent_social.Users u INNER JOIN kent_social.Followers f ON u.username = f.follower WHERE following = "' + usernameQueried + '"'
 
     connection.query(queryToExec, function (error, results, fields) {
 
