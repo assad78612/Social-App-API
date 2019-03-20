@@ -2,6 +2,7 @@ var express = require('express') //this is the equivalent of importng a package
 var mysql = require('mysql') //this is the equivalent of importng a package
 var bodyParser = require('body-parser');
 var nodemailer = require('nodemailer');
+var dateTimeHelper = require('./dateTimeHelper.js');
 
 //Assad
 var connection = mysql.createConnection({
@@ -59,7 +60,7 @@ app.get('/users', function (req, res) {
             obj.username = results[i].username;
             obj.firstName = results[i].firstName;
             obj.lastName = results[i].lastName;
-           // obj.phoneNumber = results[i].phoneNumber;
+            obj.phoneNumber = results[i].phoneNumber;
             // obj.profilePicture = results[i].profilePicture;
 
             filteredUsers.push(obj)
@@ -131,7 +132,7 @@ app.get('/userprofile', function (req, res) {
                                 "lastName": userProfileResults[0].lastName,
                                 "pwd": userProfileResults[0].pwd,
                                 "emailAddress": userProfileResults[0].emailAddress,
-                               // "phoneNumber": userProfileResults[0].phoneNumber,
+                                "phoneNumber": userProfileResults[0].phoneNumber
                                 //"profileImage": new Buffer(userProfileResults[0].profilePicture).toString('utf8')
                             },
                             "followers": followerResults,
@@ -163,9 +164,95 @@ app.get('/posts', function (req, res) {
     })
 })
 
-app.get('/events', function (req, res) {
-    connection.query('SELECT * FROM Events', function (error, results, fields) {
+app.get('/userEvents', function (req, res) {
+    connection.query('SELECT * FROM User_Events', function (error, results, fields) {
         res.send(results);
+    })
+})
+
+app.get('/findEvents', function (req, res) {
+
+    var username = req.query.username;
+    var userEventsQuery = 'SELECT e.eventID, e.eventTitle, e.eventDescription, e.eventAuthor, e.eventTime, e.timePosted FROM Events e INNER JOIN User_Events ue ON e.eventID = ue.eventID WHERE ue.username = "' + username + '"'
+
+    connection.query(userEventsQuery, function (error, results) {
+        res.status(200)
+        res.send(results)
+    })
+})
+
+
+
+app.post('/joinEvent', function (req, res) {
+
+    var username = req.body.username;
+    var eventID = req.body.eventID;
+
+    var joinSuccessful = {
+        "message": username + " has joined event " + eventID,
+        "response": "OK"
+    }
+
+    var emailAddressQuery = 'SELECT u.emailAddress FROM Events e INNER JOIN Users u ON e.eventAuthor = u.username WHERE e.eventID = "' + eventID + '"'
+
+    connection.query('INSERT INTO `User_Events` SET ?', req.body, function (error, results, fields, rows) {
+
+        connection.query(emailAddressQuery, function (error, emailAddressResult, fields, rows) {
+
+            var recipient = emailAddressResult[0].emailAddress
+
+            sendEmailJoinEvent(recipient, username)
+
+            res.setHeader('Content-Type', 'application/json');
+            res.status(200)
+            res.send(joinSuccessful)
+        });
+
+    });
+})
+
+app.delete('/leaveEvent', function (req, res) {
+
+    var username = req.body.username;
+    var eventID = req.body.eventID;
+
+    var sql = "DELETE FROM ?? WHERE ?? = ? AND ?? = ?";
+    var inserts = ['User_Events', 'username', username, 'eventID', eventID];
+    var removeUserFromEventQuery = mysql.format(sql, inserts);
+
+    var leaveSuccessful = {
+        "message": username + " has left event " + eventID,
+        "response": "OK"
+    }
+
+    connection.query(removeUserFromEventQuery, function (error, results, fields, rows) {
+        res.setHeader('Content-Type', 'application/json');
+        res.status(200)
+        res.send(leaveSuccessful)
+    });
+})
+
+
+
+app.get('/events', function (req, res) {
+    var arrayOfEvents = [];
+
+    connection.query('SELECT * FROM Events', function (error, results, fields) {
+
+        results.forEach(singleObject => {
+            var object = {
+                "eventID": singleObject.eventID,
+                "eventTitle": singleObject.eventTitle,
+                "eventDescription": singleObject.eventDescription,
+                "eventAuthor": singleObject.eventAuthor,
+                "eventTime": dateTimeHelper.convertDateTime(singleObject.eventTime),
+                "timePosted": singleObject.timePosted
+            }
+            arrayOfEvents.push(object)
+        });
+
+
+        res.send(arrayOfEvents);
     })
 })
 
@@ -332,7 +419,7 @@ app.post('/likeevent', function (req, res) {
     var deleteEventSQl = "DELETE FROM ?? WHERE ?? = ? AND ?? = ?";
     var inserts = ['Event_Likes', 'eventID', eventID, "username", username];
     var deleteExistingLikeSQL = mysql.format(deleteEventSQl, inserts);
-    
+
     connection.query(checkIfEventExistsSQL, function (error, results) {
 
         if (results.length > 0) {
@@ -341,7 +428,7 @@ app.post('/likeevent', function (req, res) {
                 res.status(200)
                 res.send("Unliked")
             })
-            
+
         } else {
             connection.query('INSERT INTO `Event_Likes` SET ?', req.body, function (error, results, fields, rows) {
                 res.setHeader('Content-Type', 'application/json');
@@ -637,6 +724,37 @@ function sendEmail(sendTo, token) {
             subject: "Welcome To MyApp", // Subject line
             text: "Your generated token is " + token, // plain text body
             html: "<b style='color: red'>" + "Your generated token is " + token + "</b>" // html body
+        };
+
+        let info = await transporter.sendMail(mailOptions)
+
+        console.log("Message sent: %s", info.messageId);
+        console.log("Preview URL: %s", nodemailer.getTestMessageUrl(info));
+    }
+
+    main().catch(console.error);
+}
+
+function sendEmailJoinEvent(sendTo, usernameWhoSignedUp) {
+
+    async function main() {
+
+        let transporter = nodemailer.createTransport({
+            host: "smtp.gmail.com",
+            port: 465,
+            secure: true, // true for 465, false for other ports
+            auth: {
+                user: "assadfarid8@gmail.com", // generated ethereal user
+                pass: "London12@" // generated ethereal password
+            }
+        });
+
+        let mailOptions = {
+            from: '"Assad Farid', // sender address
+            to: sendTo, // list of receivers
+            subject: "Welcome To Kent Social", // Subject line
+            text: usernameWhoSignedUp + " has joined your event", // plain text body
+            html: "<b style='color: black'>" + usernameWhoSignedUp + " has joined your event" + "</b>" // html body
         };
 
         let info = await transporter.sendMail(mailOptions)
