@@ -193,15 +193,16 @@ app.post('/joinEvent', function (req, res) {
         "response": "OK"
     }
 
-    var emailAddressQuery = 'SELECT u.emailAddress FROM Events e INNER JOIN Users u ON e.eventAuthor = u.username WHERE e.eventID = "' + eventID + '"'
+    var emailAddressQuery = 'SELECT u.emailAddress, e.eventTitle FROM Events e INNER JOIN Users u ON e.eventAuthor = u.username WHERE e.eventID = "' + eventID + '"'
 
     connection.query('INSERT INTO `User_Events` SET ?', req.body, function (error, results, fields, rows) {
 
-        connection.query(emailAddressQuery, function (error, emailAddressResult, fields, rows) {
+        connection.query(emailAddressQuery, function (error, result, fields, rows) {
 
-            var recipient = emailAddressResult[0].emailAddress
+            var recipient = result[0].emailAddress
+            var eventTitle = result[0].eventTitle
 
-            sendEmailJoinEvent(recipient, username)
+            sendEmailJoinEvent(recipient, username, eventTitle)
 
             res.setHeader('Content-Type', 'application/json');
             res.status(200)
@@ -408,7 +409,7 @@ app.post('/login', function (req, res) {
 })
 
 
-app.post('/likeevent', function (req, res) {
+app.post('/likeEvent', function (req, res) {
     var eventID = req.body.eventID
     var username = req.body.username
 
@@ -556,7 +557,7 @@ app.post('/register', function (request, response) {
                         response.status(200)
                         response.send(registerSuccessfulObj)
 
-                        //console.log(error);
+                        console.log(error);
                     });
                 }
             });
@@ -635,8 +636,6 @@ app.post('/follow', function (request, response) {
             response.send(userDoesNotExist)
         }
     });
-
-
 
 })
 
@@ -721,7 +720,7 @@ function sendEmail(sendTo, token) {
         let mailOptions = {
             from: '"Assad Farid', // sender address
             to: sendTo, // list of receivers
-            subject: "Welcome To MyApp", // Subject line
+            subject: "Welcome To Kent Social", // Subject line
             text: "Your generated token is " + token, // plain text body
             html: "<b style='color: red'>" + "Your generated token is " + token + "</b>" // html body
         };
@@ -735,7 +734,7 @@ function sendEmail(sendTo, token) {
     main().catch(console.error);
 }
 
-function sendEmailJoinEvent(sendTo, usernameWhoSignedUp) {
+function sendEmailJoinEvent(sendTo, usernameWhoSignedUp, eventTitle) {
 
     async function main() {
 
@@ -749,12 +748,14 @@ function sendEmailJoinEvent(sendTo, usernameWhoSignedUp) {
             }
         });
 
+        console.log(eventTitle)
+
         let mailOptions = {
             from: '"Assad Farid', // sender address
             to: sendTo, // list of receivers
             subject: "Welcome To Kent Social", // Subject line
-            text: usernameWhoSignedUp + " has joined your event", // plain text body
-            html: "<b style='color: black'>" + usernameWhoSignedUp + " has joined your event" + "</b>" // html body
+            text: usernameWhoSignedUp + " has joined your event '" + eventTitle + "'", // plain text body
+            html: "<b style='color: black'>" + usernameWhoSignedUp + " has joined your event '" + eventTitle + "' </b>" // html body
         };
 
         let info = await transporter.sendMail(mailOptions)

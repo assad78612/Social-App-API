@@ -3,13 +3,13 @@ const monthNames = ["January", "February", "March", "April", "May", "June",
 ];
 
 module.exports = {
-    convertDateTime: function (dateTime){
-        var date = new Date(dateTime)
-        var month = monthNames[date.getMonth()]
-        var day = date.getDate()
-        
+  convertDateTime: function (dateTime) {
+    var date = new Date(dateTime)
+    var month = monthNames[date.getMonth()]
+    var day = date.getDate()
 
-        return month + " " + day 
 
-    }
+    return month + " " + day
+
+  }
 };
