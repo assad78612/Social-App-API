@@ -1,10 +1,10 @@
-var express = require('express') //this is the equivalent of importng a package
-var mysql = require('mysql') //this is the equivalent of importng a package
+var express = require('express') // This is the equivalent of importng a package
+var mysql = require('mysql') // This is the equivalent of importng a package
 var bodyParser = require('body-parser');
 var nodemailer = require('nodemailer');
 var dateTimeHelper = require('./dateTimeHelper.js');
 
-//Assad
+//This is the setup to establish a connection to the SQL database using the My SQL credentials 
 var connection = mysql.createConnection({
     host: '127.0.0.1',
     port: '3306',
@@ -13,19 +13,6 @@ var connection = mysql.createConnection({
     database: 'kent_social'
 });
 
-
-
-
-/* Difference betwen Java and JS Functions
-[ JAVASCRIPT ]
-function myFunction(){
-    return "hi"
-}
-
-[ JAVA ]
-private String myFunction(){
-    return "hi"
-} */
 
 connection.connect(function (err) {
     if (err) {
@@ -52,7 +39,7 @@ app.get('/users', function (req, res) {
 
 
         for (var i = 0; i < results.length; i++) {
-            //lets make an empty object
+            //This make an empty object
             var obj = {}
 
             /* and then make a key clled username
@@ -61,15 +48,9 @@ app.get('/users', function (req, res) {
             obj.firstName = results[i].firstName;
             obj.lastName = results[i].lastName;
             obj.phoneNumber = results[i].phoneNumber;
-            // obj.profilePicture = results[i].profilePicture;
 
             filteredUsers.push(obj)
         }
-
-        /* [{
-            username:
-             firtsName:
-        }] */
 
         console.log(results);
         res.send(filteredUsers);
@@ -79,20 +60,12 @@ app.get('/users', function (req, res) {
 
 //app.post('/uploadProfileImage') {
 
-//req.body.username
-//req.body.base64image
 
 
-//do a queyr to check thar the user youre trying to update exists
 
-// if they do exist 
 
 //convert the image they uploaded to base64 (android side, so at this point uou should get /9/dsdhakjh379837dhakhdkjahk)
 
-/*  UPDATE socialapp.Users
- SET profilePicture = 'BASE 64 STRING GOES HERE'
- WHERE username = 'req.body.username' */
-//}
 
 app.get('/userprofile', function (req, res) {
     var username = req.query.id;
@@ -145,7 +118,7 @@ app.get('/userprofile', function (req, res) {
             })
 
         } else {
-
+            //mime text/plain
             res.setHeader('Content-Type', 'application/json');
             res.status(400)
 
@@ -158,22 +131,13 @@ app.get('/userprofile', function (req, res) {
 })
 
 
-app.get('/posts', function (req, res) {
-    connection.query('SELECT * FROM Posts', function (error, results, fields) {
-        res.send(results);
-    })
-})
-
-app.get('/userEvents', function (req, res) {
-    connection.query('SELECT * FROM User_Events', function (error, results, fields) {
-        res.send(results);
-    })
-})
 
 app.get('/findEvents', function (req, res) {
 
     var username = req.query.username;
-    var userEventsQuery = 'SELECT e.eventID, e.eventTitle, e.eventDescription, e.eventAuthor, e.eventTime, e.timePosted FROM Events e INNER JOIN User_Events ue ON e.eventID = ue.eventID WHERE ue.username = "' + username + '"'
+    //var userEventsQuery = 'SELECT e.eventID, e.eventTitle, e.eventDescription, e.eventAuthor, e.eventTime, e.timePosted FROM Events e INNER JOIN User_Events ue ON e.eventID = ue.eventID WHERE ue.username = "' + username + '"'
+
+    var userEventsQuery = 'SELECT * FROM Events'
 
     connection.query(userEventsQuery, function (error, results) {
         res.status(200)
@@ -182,7 +146,7 @@ app.get('/findEvents', function (req, res) {
 })
 
 
-
+// Using this endpoint will allow users to join events, by using the following SQL format, joining some fields from Users joining tables on Events 
 app.post('/joinEvent', function (req, res) {
 
     var username = req.body.username;
@@ -212,7 +176,34 @@ app.post('/joinEvent', function (req, res) {
     });
 })
 
-app.delete('/leaveEvent', function (req, res) {
+app.get('/events', function (req, res) {
+    var arrayOfEvents = [];
+
+    var query = 'SELECT * FROM Events';
+
+    connection.query(query, function (error, results, fields) {
+
+        console.log(results, error)
+        results.forEach(singleObject => {
+            var object = {
+                "eventID": singleObject.eventID,
+                "eventTitle": singleObject.eventTitle,
+                "eventDescription": singleObject.eventDescription,
+                "eventAuthor": singleObject.eventAuthor,
+                "eventTime": dateTimeHelper.convertDateTime(singleObject.eventTime),
+                "timePosted": singleObject.timePosted
+                // "hasJoined": singleObject.hasJoined
+            }
+            arrayOfEvents.push(object)
+        });
+
+
+        res.send(arrayOfEvents);
+    })
+})
+
+
+app.post('/leaveEvent', function (req, res) {
 
     var username = req.body.username;
     var eventID = req.body.eventID;
@@ -231,30 +222,6 @@ app.delete('/leaveEvent', function (req, res) {
         res.status(200)
         res.send(leaveSuccessful)
     });
-})
-
-
-
-app.get('/events', function (req, res) {
-    var arrayOfEvents = [];
-
-    connection.query('SELECT * FROM Events', function (error, results, fields) {
-
-        results.forEach(singleObject => {
-            var object = {
-                "eventID": singleObject.eventID,
-                "eventTitle": singleObject.eventTitle,
-                "eventDescription": singleObject.eventDescription,
-                "eventAuthor": singleObject.eventAuthor,
-                "eventTime": dateTimeHelper.convertDateTime(singleObject.eventTime),
-                "timePosted": singleObject.timePosted
-            }
-            arrayOfEvents.push(object)
-        });
-
-
-        res.send(arrayOfEvents);
-    })
 })
 
 
@@ -321,14 +288,18 @@ app.post('/createPost', function (req, res) {
 app.post('/createEvents', function (req, res) {
 
     var currentDate = new Date()
-    //eventID, eventTitle, eventDescription, eventAuthor, eventTime
+
+    // Non accepted
+    console.log(req.body.eventTime)
+    // Accepted
+    console.log(currentDate)
 
     var dataToInsert = {
         "eventID": 0,
         "eventTitle": req.body.eventTitle,
         "eventDescription": req.body.eventDescription,
         "eventAuthor": req.body.eventAuthor,
-        "eventTime": currentDate
+        "eventTime": req.body.eventTime
     }
 
     var userDoesNotExist = {
@@ -353,7 +324,7 @@ app.post('/createEvents', function (req, res) {
 
     connection.query(userGeneratedQuery, function (error, results) {
 
-        console.log("HIT THIS POINT")
+        console.log(error)
 
         if (results.length >= 1) {
 
@@ -377,10 +348,6 @@ app.post('/createEvents', function (req, res) {
 })
 
 app.post('/login', function (req, res) {
-
-    /* SELECT * FROM socialapp.Users
-    WHERE username = "af410"
-    AND pwd = "London23" */
 
     var authenticationSuccessfulObj = {
         "message": "Authentication successful",
@@ -408,38 +375,6 @@ app.post('/login', function (req, res) {
     });
 })
 
-
-app.post('/likeEvent', function (req, res) {
-    var eventID = req.body.eventID
-    var username = req.body.username
-
-    var checkEventSQL = "SELECT * FROM ?? WHERE ?? = ? AND ?? = ?";
-    var inserts = ['Event_Likes', 'eventID', eventID, "username", username];
-    var checkIfEventExistsSQL = mysql.format(checkEventSQL, inserts);
-
-    var deleteEventSQl = "DELETE FROM ?? WHERE ?? = ? AND ?? = ?";
-    var inserts = ['Event_Likes', 'eventID', eventID, "username", username];
-    var deleteExistingLikeSQL = mysql.format(deleteEventSQl, inserts);
-
-    connection.query(checkIfEventExistsSQL, function (error, results) {
-
-        if (results.length > 0) {
-            connection.query(deleteExistingLikeSQL, function (error, results) {
-                res.setHeader('Content-Type', 'application/json');
-                res.status(200)
-                res.send("Unliked")
-            })
-
-        } else {
-            connection.query('INSERT INTO `Event_Likes` SET ?', req.body, function (error, results, fields, rows) {
-                res.setHeader('Content-Type', 'application/json');
-                res.status(200)
-                res.send("Liked")
-            });
-        }
-    });
-
-});
 
 app.post('/generateEmailToken', function (req, res) {
     var emailAddress = req.body.emailAddress
@@ -529,6 +464,9 @@ app.post('/register', function (request, response) {
         "reason": "Email exists"
     }
 
+    /* For testing purposes using "test" as a username was used to check if that username has been registered into 
+    the database and has been succesfully registered from Android Studio. This allowed us examine from both sides Android and the API */
+
 
     connection.query("DELETE FROM Users WHERE username = 'test'")
 
@@ -564,103 +502,6 @@ app.post('/register', function (request, response) {
         }
 
     });
-
-})
-
-
-/*
-    Endpoint   : /follow
-    Purpose    : This endpoint allows a user to follow another user
-*/
-app.post('/follow', function (request, response) {
-    var follower = request.body.follower
-    var following = request.body.following
-
-    var followData = request.body;
-
-    var followSuccess = {
-        "message": "Follow successful",
-        "response": "OK"
-    }
-
-    var followUnsuccessful = {
-        "message": "Follow unsuccessful",
-        "response": "BAD",
-        "reason": "You are already following that user"
-    }
-
-    var userDoesNotExist = {
-        "message": "Follow unsuccessful",
-        "response": "BAD",
-        "reason": "User does not exist"
-    }
-
-    //Skeleton
-    var userQuery = "SELECT * FROM ?? WHERE ?? = ?";
-
-    //Data to go into question marks
-    var userInserts = ['Users', 'username', following];
-    var userGeneratedQuery = mysql.format(userQuery, userInserts);
-
-    connection.query(userGeneratedQuery, function (error, results) {
-
-        if (results.length >= 1) {
-
-            // Check to see if they're already following
-            var followQuery = "SELECT * FROM ?? WHERE ?? = ? AND ?? = ?";
-
-            //Data to go into question marks
-            var followInserts = ['Followers', 'follower', follower, 'following', following];
-            var followGeneratedQuery = mysql.format(followQuery, followInserts);
-
-
-            connection.query(followGeneratedQuery, function (error, results) {
-
-                if (results.length == 1) {
-                    response.status(400)
-                    response.send(followUnsuccessful)
-
-                } else {
-
-                    connection.query('INSERT INTO `Followers` SET ?', followData, function (error, results, fields, rows) {
-                        response.setHeader('Content-Type', 'application/json');
-                        response.status(200)
-                        response.send(followSuccess)
-                    });
-                }
-            });
-
-
-        } else {
-            response.setHeader('Content-Type', 'application/json');
-            response.send(userDoesNotExist)
-        }
-    });
-
-})
-
-
-app.get('/following', function (req, res) {
-    var usernameQueried = req.query.username;
-
-    //This is a string which represents our qurey 
-    var queryToExec = 'SELECT u.username, u.firstName, u.lastName FROM kent_social.Users u INNER JOIN kent_social.Followers f ON u.username = f.following WHERE f.follower = "' + usernameQueried + '"'
-    //Once the string has been built using the provided MySQL qurey, which will be inptuted into the query which will get the results 
-    connection.query(queryToExec, function (error, results, fields) {
-        res.send(results);
-    })
-})
-
-app.get('/followers', function (req, res) {
-
-    var usernameQueried = req.query.username;
-
-    var queryToExec = 'SELECT u.username, u.firstName, u.lastName FROM kent_social.Users u INNER JOIN kent_social.Followers f ON u.username = f.follower WHERE following = "' + usernameQueried + '"'
-
-    connection.query(queryToExec, function (error, results, fields) {
-
-        res.send(results);
-    })
 
 })
 
@@ -733,6 +574,40 @@ function sendEmail(sendTo, token) {
 
     main().catch(console.error);
 }
+
+// function sendEmailLeaveEvent(sendTo, usernameWhoSignedUp, eventTitle) {
+
+//     async function main() {
+
+//         let transporter = nodemailer.createTransport({
+//             host: "smtp.gmail.com",
+//             port: 465,
+//             secure: true, // true for 465, false for other ports
+//             auth: {
+//                 user: "assadfarid8@gmail.com", // generated ethereal user
+//                 pass: "London12@" // generated ethereal password
+//             }
+//         });
+
+//         console.log(eventTitle)
+
+//         let mailOptions = {
+//             from: '"Assad Farid', // sender address
+//             to: sendTo, // list of receivers
+//             subject: "Welcome To Kent Social", // Subject line
+//             text: usernameWhoLeft + " has left your event '" + eventTitle + "'", // plain text body
+//             html: "<b style='color: black'>" + usernameWhoLeft + " has left your event '" + eventTitle + "' </b>" // html body
+//         };
+
+//         let info = await transporter.sendMail(mailOptions)
+
+//         console.log("Message sent: %s", info.messageId);
+//         console.log("Preview URL: %s", nodemailer.getTestMessageUrl(info));
+//     }
+
+//     main().catch(console.error);
+// }
+
 
 function sendEmailJoinEvent(sendTo, usernameWhoSignedUp, eventTitle) {
 

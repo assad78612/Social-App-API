@@ -3,13 +3,10 @@ const monthNames = ["January", "February", "March", "April", "May", "June",
 ];
 
 module.exports = {
-  convertDateTime: function (dateTime) {
-    var date = new Date(dateTime)
+  convertDateTime: function (rawDateTime) {
+    var date = new Date(rawDateTime)
     var month = monthNames[date.getMonth()]
     var day = date.getDate()
-
-
-    return month + " " + day
-
-  }
+    return month + " " + day + " - " + rawDateTime.toString().substring(16, 21)
+  },
 };
