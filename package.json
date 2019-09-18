@@ -19,6 +19,6 @@
     "package.json": "^2.0.1"
   },
   "devDependencies": {
-    "nodemon": "^1.18.10"
+    "nodemon": "^1.19.2"
   }
 }
