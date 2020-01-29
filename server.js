@@ -2,7 +2,8 @@ var express = require('express') // This is the equivalent of importng a package
 var mysql = require('mysql') // This is the equivalent of importng a package
 var bodyParser = require('body-parser');
 var nodemailer = require('nodemailer');
-var dateTimeHelper = require('./dateTimeHelper.js');
+var dateTimeHelper = require('./dateTimeHelper');
+
 
 //This is the setup to establish a connection to the SQL database using the My SQL credentials 
 var connection = mysql.createConnection({
@@ -42,7 +43,7 @@ app.get('/users', function (req, res) {
             //This make an empty object
             var obj = {}
 
-            /* and then make a key clled username
+            /* And then make a key clled username
             and then get the current object in the loop, and get the username field from it */
             obj.username = results[i].username;
             obj.firstName = results[i].firstName;
@@ -117,6 +118,8 @@ app.get('/userprofile', function (req, res) {
                 })
             })
 
+
+
         } else {
             //mime text/plain
             res.setHeader('Content-Type', 'application/json');
@@ -131,11 +134,10 @@ app.get('/userprofile', function (req, res) {
 })
 
 
-
 app.get('/findEvents', function (req, res) {
 
     var username = req.query.username;
-    //var userEventsQuery = 'SELECT e.eventID, e.eventTitle, e.eventDescription, e.eventAuthor, e.eventTime, e.timePosted FROM Events e INNER JOIN User_Events ue ON e.eventID = ue.eventID WHERE ue.username = "' + username + '"'
+    // var userEventsQuery = 'SELECT e.eventID, e.eventTitle, e.eventDescription, e.eventAuthor, e.eventTime, e.timePosted FROM Events e INNER JOIN User_Events ue ON e.eventID = ue.eventID WHERE ue.username = "' + username + '"'
 
     var userEventsQuery = 'SELECT * FROM Events'
 
@@ -176,29 +178,37 @@ app.post('/joinEvent', function (req, res) {
     });
 })
 
-app.get('/events', function (req, res) {
-    var arrayOfEvents = [];
+app.get('/events', function (req, res, fields) {
 
-    var query = 'SELECT * FROM Events';
+    var arrayOfEvents = [];
+    var query = `SELECT * FROM kent_social.Events`;
+
 
     connection.query(query, function (error, results, fields) {
 
         console.log(results, error)
         results.forEach(singleObject => {
+
             var object = {
+
                 "eventID": singleObject.eventID,
                 "eventTitle": singleObject.eventTitle,
                 "eventDescription": singleObject.eventDescription,
                 "eventAuthor": singleObject.eventAuthor,
                 "eventTime": dateTimeHelper.convertDateTime(singleObject.eventTime),
-                "timePosted": singleObject.timePosted
-                // "hasJoined": singleObject.hasJoined
+                "time": singleObject.time
+
             }
             arrayOfEvents.push(object)
+            res.setHeader('Content-Type', 'application/json');
+
+
         });
 
-
         res.send(arrayOfEvents);
+
+        // res.status(200)
+        // res.send(results);
     })
 })
 
@@ -208,19 +218,32 @@ app.post('/leaveEvent', function (req, res) {
     var username = req.body.username;
     var eventID = req.body.eventID;
 
-    var sql = "DELETE FROM ?? WHERE ?? = ? AND ?? = ?";
-    var inserts = ['User_Events', 'username', username, 'eventID', eventID];
-    var removeUserFromEventQuery = mysql.format(sql, inserts);
+    console.log("the event ID is ", eventID)
+
+    var query1_sql = `DELETE FROM User_Events WHERE username = "${username}" AND eventID = "${eventID}"`;
+    var query2_findEmailOfPersonWhoOwnsEvent = `    SELECT u.emailAddress FROM kent_social.Events e
+                                                    INNER JOIN Users u ON e.eventAuthor = u.username
+                                                    WHERE eventID = '${eventID}'`
+
 
     var leaveSuccessful = {
         "message": username + " has left event " + eventID,
         "response": "OK"
     }
 
-    connection.query(removeUserFromEventQuery, function (error, results, fields, rows) {
-        res.setHeader('Content-Type', 'application/json');
-        res.status(200)
-        res.send(leaveSuccessful)
+    connection.query(query1_sql, function (error, q1Results, fields, rows) {
+        connection.query(query2_findEmailOfPersonWhoOwnsEvent, function (error, q2Results, fields, rows, emailAddress) {
+
+            let ownerOfEventEmail = q2Results[0].emailAddress
+            sendEmailLeaveEvent(ownerOfEventEmail, username, eventID)
+
+
+            res.setHeader('Content-Type', 'application/json');
+            res.status(200)
+            console.log(error)
+            res.send(leaveSuccessful)
+        })
+
     });
 })
 
@@ -299,7 +322,8 @@ app.post('/createEvents', function (req, res) {
         "eventTitle": req.body.eventTitle,
         "eventDescription": req.body.eventDescription,
         "eventAuthor": req.body.eventAuthor,
-        "eventTime": req.body.eventTime
+        "eventTime": Date(),
+        "time": req.body.time
     }
 
     var userDoesNotExist = {
@@ -575,38 +599,40 @@ function sendEmail(sendTo, token) {
     main().catch(console.error);
 }
 
-// function sendEmailLeaveEvent(sendTo, usernameWhoSignedUp, eventTitle) {
 
-//     async function main() {
 
-//         let transporter = nodemailer.createTransport({
-//             host: "smtp.gmail.com",
-//             port: 465,
-//             secure: true, // true for 465, false for other ports
-//             auth: {
-//                 user: "assadfarid8@gmail.com", // generated ethereal user
-//                 pass: "London12@" // generated ethereal password
-//             }
-//         });
+function sendEmailLeaveEvent(sendTo, usernameWhoSignedUp, eventTitle) {
 
-//         console.log(eventTitle)
+    async function main() {
 
-//         let mailOptions = {
-//             from: '"Assad Farid', // sender address
-//             to: sendTo, // list of receivers
-//             subject: "Welcome To Kent Social", // Subject line
-//             text: usernameWhoLeft + " has left your event '" + eventTitle + "'", // plain text body
-//             html: "<b style='color: black'>" + usernameWhoLeft + " has left your event '" + eventTitle + "' </b>" // html body
-//         };
+        let transporter = nodemailer.createTransport({
+            host: "smtp.gmail.com",
+            port: 465,
+            secure: true, // true for 465, false for other ports
+            auth: {
+                user: "assadfarid8@gmail.com", // generated ethereal user
+                pass: "London12@" // generated ethereal password
+            }
+        });
 
-//         let info = await transporter.sendMail(mailOptions)
+        console.log(eventTitle)
 
-//         console.log("Message sent: %s", info.messageId);
-//         console.log("Preview URL: %s", nodemailer.getTestMessageUrl(info));
-//     }
+        let mailOptions = {
+            from: '"Assad Farid', // sender address
+            to: sendTo, // list of receivers
+            subject: "Welcome To Kent Social", // Subject line
+            text: usernameWhoSignedUp + " has left your event '" + eventTitle + "'", // plain text body
+            html: "<b style='color: black'>" + usernameWhoSignedUp + " has left your event '" + eventTitle + "' </b>" // html body
+        };
 
-//     main().catch(console.error);
-// }
+        let info = await transporter.sendMail(mailOptions)
+
+        console.log("Message sent: %s", info.messageId);
+        console.log("Preview URL: %s", nodemailer.getTestMessageUrl(info));
+    }
+
+    main().catch(console.error);
+}
 
 
 function sendEmailJoinEvent(sendTo, usernameWhoSignedUp, eventTitle) {
