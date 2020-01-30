@@ -281,6 +281,8 @@ app.post('/createPost', function (req, res) {
         "reason": "Post has been created"
     }
 
+    //Assad
+
 
     //Skeleton
     var userQuery = "SELECT * FROM ?? WHERE ?? = ?";
