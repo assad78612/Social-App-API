@@ -255,7 +255,7 @@ app.get('/search', function (req, res) {
         res.send(results);
     })
 })
-
+//Test
 app.post('/createPost', function (req, res) {
 
     var currentDate = new Date()
