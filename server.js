@@ -587,7 +587,7 @@ function sendEmail(sendTo, token) {
             to: sendTo, // list of receivers
             subject: "Welcome To Kent Social", // Subject line
             text: "Your generated token is " + token, // plain text body
-            html: "<b style='color: red'>" + "Your generated token is " + token + "</b>" // html body
+            html: "<b style='color: red'>" + "Your generated token is " + +token +"</b>" // html body
         };
 
         let info = await transporter.sendMail(mailOptions)
