@@ -287,7 +287,7 @@ app.post('/joinEvent', function (req, res) {
 
     });
 })
-//iguiugug ugeufguewgfurfg hihihihih
+
 app.get('/events', function (req, res, fields) {
 
     var arrayOfEvents = [];
