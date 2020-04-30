@@ -203,22 +203,11 @@ app.post('/follow', function (request, response) {
 })
 
 
-app.get('/following', function (req, res) {
-    var usernameQueried = req.query.username;
-
-    //This is a string which represents our qurey 
-    var queryToExec = 'SELECT u.username, u.firstName, u.lastName FROM socialapp.Users u INNER JOIN socialapp.Followers f ON u.username = f.following WHERE f.follower = "' + usernameQueried + '"'
-    //Once the string has been built using the provided MySQL qurey, which will be inptuted into the query which will get the results 
-    connection.query(queryToExec, function (error, results, fields) {
-        res.send(results);
-    })
-})
-
 app.get('/followers', function (req, res) {
 
     var usernameQueried = req.query.username;
 
-    var queryToExec = 'SELECT u.username, u.firstName, u.lastName FROM socialapp.Users u INNER JOIN socialapp.Followers f ON u.username = f.follower WHERE following = "' + usernameQueried + '"'
+    var queryToExec = 'SELECT u.username, u.firstName, u.lastName FROM kent_social.Users u INNER JOIN kent_social.Followers f ON u.username = f.follower WHERE following = "' + usernameQueried + '"'
 
     connection.query(queryToExec, function (error, results, fields) {
 
@@ -228,12 +217,24 @@ app.get('/followers', function (req, res) {
 
 })
 
+app.get('/following', function (req, res) {
+    var usernameQueried = req.query.username;
+
+    //This is a string which represents our qurey 
+    var queryToExec = 'SELECT u.username, u.firstName, u.lastName FROM kent_social.Users u INNER JOIN kent_social.Followers f ON u.username = f.following WHERE f.follower = "' + usernameQueried + '"'
+    //Once the string has been built using the provided MySQL qurey, which will be inptuted into the query which will get the results 
+    connection.query(queryToExec, function (error, results, fields) {
+        res.send(results);
+    })
+})
+
+
 
 app.get('/emails', function (req, res) {
 
     var emailQueried = req.query.email;
 
-    var queryToExec = 'SELECT u.username, u.firstName, u.lastName FROM socialapp.Users u INNER JOIN socialapp.Followers f ON u.username = f.follower WHERE following = "' + usernameQueried + '"'
+    var queryToExec = 'SELECT u.username, u.firstName, u.lastName FROM kent_social.Users u INNER JOIN kent_social.Followers f ON u.username = f.follower WHERE following = "' + usernameQueried + '"'
 
     connection.query(queryToExec, function (error, results, fields) {
 
@@ -696,7 +697,7 @@ function sendEmail(sendTo, token) {
             to: sendTo, // list of receivers
             subject: "Welcome To Kent Social", // Subject line
             text: "Your generated token is " + token, // plain text body
-            html: "<b style='color: red'>" + "Your generated token is " + +token +"</b>" // html body
+            html: "<b style='color: red'>" + "Your generated token is " + +token + "</b>" // html body
         };
 
         let info = await transporter.sendMail(mailOptions)
