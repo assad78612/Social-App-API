@@ -133,6 +133,115 @@ app.get('/userprofile', function (req, res) {
     })
 })
 
+app.post('/follow', function (request, response) {
+    var follower = request.body.follower
+    var following = request.body.following
+
+    var followData = request.body;
+
+    var followSuccess = {
+        "message": "Follow successful",
+        "response": "OK"
+    }
+
+    var followUnsuccessful = {
+        "message": "Follow unsuccessful",
+        "response": "BAD",
+        "reason": "You are already following that user"
+    }
+
+    var userDoesNotExist = {
+        "message": "Follow unsuccessful",
+        "response": "BAD",
+        "reason": "User does not exist"
+    }
+
+    //Skeleton s
+    var userQuery = "SELECT * FROM ?? WHERE ?? = ?";
+
+    //Data to go into question marks
+    var userInserts = ['Users', 'username', following];
+    var userGeneratedQuery = mysql.format(userQuery, userInserts);
+
+    connection.query(userGeneratedQuery, function (error, results) {
+
+        if (results.length >= 1) {
+
+            // Check to see if they're already following
+            var followQuery = "SELECT * FROM ?? WHERE ?? = ? AND ?? = ?";
+
+            //Data to go into question marks
+            var followInserts = ['Followers', 'follower', follower, 'following', following];
+            var followGeneratedQuery = mysql.format(followQuery, followInserts);
+
+
+            connection.query(followGeneratedQuery, function (error, results) {
+
+                if (results.length == 1) {
+                    response.status(400)
+                    response.send(followUnsuccessful)
+
+                } else {
+
+                    connection.query('INSERT INTO `Followers` SET ?', followData, function (error, results, fields, rows) {
+                        response.setHeader('Content-Type', 'application/json');
+                        response.status(200)
+                        response.send(followSuccess)
+                    });
+                }
+            });
+
+
+        } else {
+            response.setHeader('Content-Type', 'application/json');
+            response.send(userDoesNotExist)
+        }
+    });
+
+
+
+})
+
+
+app.get('/following', function (req, res) {
+    var usernameQueried = req.query.username;
+
+    //This is a string which represents our qurey 
+    var queryToExec = 'SELECT u.username, u.firstName, u.lastName FROM socialapp.Users u INNER JOIN socialapp.Followers f ON u.username = f.following WHERE f.follower = "' + usernameQueried + '"'
+    //Once the string has been built using the provided MySQL qurey, which will be inptuted into the query which will get the results 
+    connection.query(queryToExec, function (error, results, fields) {
+        res.send(results);
+    })
+})
+
+app.get('/followers', function (req, res) {
+
+    var usernameQueried = req.query.username;
+
+    var queryToExec = 'SELECT u.username, u.firstName, u.lastName FROM socialapp.Users u INNER JOIN socialapp.Followers f ON u.username = f.follower WHERE following = "' + usernameQueried + '"'
+
+    connection.query(queryToExec, function (error, results, fields) {
+
+        res.send(results);
+        console.log(error);
+    })
+
+})
+
+
+app.get('/emails', function (req, res) {
+
+    var emailQueried = req.query.email;
+
+    var queryToExec = 'SELECT u.username, u.firstName, u.lastName FROM socialapp.Users u INNER JOIN socialapp.Followers f ON u.username = f.follower WHERE following = "' + usernameQueried + '"'
+
+    connection.query(queryToExec, function (error, results, fields) {
+
+        res.send(results);
+    })
+
+})
+
 
 app.get('/findEvents', function (req, res) {
 
