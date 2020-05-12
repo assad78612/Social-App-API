@@ -67,8 +67,18 @@ app.get('/users', function (req, res) {
 
 //convert the image they uploaded to base64 (android side, so at this point uou should get /9/dsdhakjh379837dhakhdkjahk)
 
+app.get('/followersCount', function (req, res) {
 
-app.get('/userprofile', function (req, res) {
+    var userCount = 'SELECT COUNT(*) FROM Followers';
+
+    connection.query(userCount, function (error, results) {
+        res.status(200)
+        res.send(results)
+        console.log(results)
+    })
+})
+
+app.get('/userProfile', function (req, res) {
     var username = req.query.id;
 
     var sql = "SELECT * FROM ?? WHERE ?? = ?";
@@ -697,7 +707,7 @@ function sendEmail(sendTo, token) {
             to: sendTo, // list of receivers
             subject: "Welcome To Kent Social", // Subject line
             text: "Your generated token is " + token, // plain text body
-            html: "<b style='color: red'>" + "Your generated token is " + +token + "</b>" // html body
+            html: "<b style='color: red'>" + "Your generated token is " +token + "</b>" // html body
         };
 
         let info = await transporter.sendMail(mailOptions)
@@ -732,7 +742,7 @@ function sendEmailLeaveEvent(sendTo, usernameWhoSignedUp, eventTitle) {
             to: sendTo, // list of receivers
             subject: "Welcome To Kent Social", // Subject line
             text: usernameWhoSignedUp + " has left your event '" + eventTitle + "'", // plain text body
-            html: "<b style='color: black'>" + usernameWhoSignedUp + " has left your event '" + eventTitle + "' </b>" // html body
+            html: "<b style='color: red'>" + usernameWhoSignedUp + " has left your event '" + eventTitle + "' </b>" // html body
         };
 
         let info = await transporter.sendMail(mailOptions)
@@ -766,7 +776,7 @@ function sendEmailJoinEvent(sendTo, usernameWhoSignedUp, eventTitle) {
             to: sendTo, // list of receivers
             subject: "Welcome To Kent Social", // Subject line
             text: usernameWhoSignedUp + " has joined your event '" + eventTitle + "'", // plain text body
-            html: "<b style='color: black'>" + usernameWhoSignedUp + " has joined your event '" + eventTitle + "' </b>" // html body
+            html: "<b style='color: red'>" + usernameWhoSignedUp + " has joined your event '" + eventTitle + "' </b>" // html body
         };
 
         let info = await transporter.sendMail(mailOptions)
