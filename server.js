@@ -531,7 +531,6 @@ app.post("/generateEmailToken", function (req, res) {
   sendEmail(emailAddress, generatedKey);
 
   var currentDate = new Date();
-
   var dataToInsert = {
     emailAddress: emailAddress,
     token: generatedKey,
@@ -580,7 +579,6 @@ app.post("/checkEmailToken", function (req, res) {
 app.post("/register", function (request, response) {
   var username = request.body.username;
   var emailAddress = request.body.emailAddress;
-
   var userPostingData = request.body;
 
   var registerSuccessfulObj = {
@@ -660,7 +658,6 @@ app.get("/emails", function (req, res) {
 
 app.get("/checkEmail", function (req, res) {
   var username = req.query.username;
-
   var sql = "SELECT emailAddress FROM ?? WHERE ?? = ?";
   var inserts = ["Users", "username", username];
   var newFormattedSQL = mysql.format(sql, inserts);
